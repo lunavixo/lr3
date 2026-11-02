@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <time.h>
 
 void part1();
 void part2();
@@ -169,19 +170,14 @@ int main()
 
     while(true)
     {
-        printf("Введіть максимальну похибку): ");
+        printf("Введіть максимальну похибку(>0): ");
         scanf("%lf", &max_err);
         if(max_err > 0) break;
         else printf("Невірно введене значення!\n");
     }
 
-    while(true)
-    {
-        printf("Введіть кількість ітерацій(>0): ");
-        scanf("%d", &max_iter);
-        if(max_iter > 0) break;
-        else printf("Невірно введене значення!\n");
-    }
+    printf("Введіть кількість ітерацій(при введені 0 буде шукати корінь поки не знайде): ");
+    scanf("%d", &max_iter);
 
     bool verbose = false;
 
@@ -211,6 +207,11 @@ int main()
            verbose ? "Y" : "N");*/
 
     double result = 0.0 / 0.0; // NAN
+    double a;
+
+    struct timespec start, end;
+
+    clock_gettime(CLOCK_MONOTONIC, &start);
 
     switch(t1)
     {
@@ -236,7 +237,8 @@ int main()
         {
             double old_x = isol_gap[1];
             double a = isol_gap[0];
-            for(unsigned int i = 0; i < max_iter; i++)
+            unsigned int max_iter_sum = max_iter;
+            for(unsigned int i = 0; i < max_iter_sum || max_iter_sum == 0; i++)
             {
                 double x = old_x - f(old_x)/(f(old_x) - f(a))*(old_x - a);
                 if(verbose) printf("Ітерація №%u:\n"
@@ -251,6 +253,24 @@ int main()
                     result = x;
                     break;
                 }
+                if(i == max_iter_sum - 1)
+                    while(true)
+                    {
+                        char buffer[2];
+                        printf("Ітерація досягла максимуму. Продовжити на ту ж кількість?(y/n):");
+                        scanf("%1s", &buffer);
+                        if(buffer[0] == 'y')
+                        {
+                            max_iter_sum += max_iter;
+                            break;
+                        }
+                        else if (buffer[0] == 'n')
+                        {
+                            a = x;
+                            break;
+                        }
+                        else printf("Невірно введене значення!\n");
+                    }
                 old_x = x;
             }
         }
@@ -258,7 +278,8 @@ int main()
         {
             double old_x = isol_gap[0];
             double b = isol_gap[1];
-            for(unsigned int i = 0; i < max_iter; i++)
+            unsigned int max_iter_sum = max_iter;
+            for(unsigned int i = 0; i < max_iter_sum || max_iter_sum == 0; i++)
             {
                 double x = old_x - f(old_x)/(f(b) - f(old_x)) * (b - old_x);
                 if(verbose) printf("Ітерація №%u:\n"
@@ -273,6 +294,24 @@ int main()
                     result = x;
                     break;
                 }
+                if(i == max_iter_sum - 1)
+                    while(true)
+                    {
+                        char buffer[2];
+                        printf("Ітерація досягла максимуму. Продовжити на ту ж кількість?(y/n):");
+                        scanf("%1s", &buffer);
+                        if(buffer[0] == 'y')
+                        {
+                            max_iter_sum += max_iter;
+                            break;
+                        }
+                        else if (buffer[0] == 'n')
+                        {
+                            a = x;
+                            break;
+                        }
+                        else printf("Невірно введене значення!\n");
+                    }
                 old_x = x;
             }
         }
@@ -285,7 +324,8 @@ int main()
         else
         {
             double interval[2] = {isol_gap[0], isol_gap[1]};
-            for(unsigned int i = 0; i < max_iter; i++)
+            unsigned int max_iter_sum = max_iter;
+            for(unsigned int i = 0; i < max_iter_sum || max_iter_sum == 0; i++)
             {
                 double delta = (interval[1] - interval[0]) / 2;
                 double x = interval[0] + delta;
@@ -309,6 +349,24 @@ int main()
                     result = x;
                     break;
                 }
+                if(i == max_iter_sum - 1)
+                    while(true)
+                    {
+                        char buffer[2];
+                        printf("Ітерація досягла максиуму. Продовжити на ту ж кількість?(y/n):");
+                        scanf("%1s", &buffer);
+                        if(buffer[0] == 'y')
+                        {
+                            max_iter_sum += max_iter;
+                            break;
+                        }
+                        else if (buffer[0] == 'n')
+                        {
+                            a = x;
+                            break;
+                        }
+                        else printf("Невірно введене значення!\n");
+                    }
                 if(f(interval[0]) * f(x) < 0) interval[1] = x;
                 else interval[0] = x;
             }
@@ -317,9 +375,29 @@ int main()
 
     }
 
+    clock_gettime(CLOCK_MONOTONIC, &end);
+
+    unsigned long seconds = end.tv_sec - start.tv_sec;
+    unsigned long ns = end.tv_nsec - start.tv_nsec;
+
+    unsigned long millis = ns / 1000000 % 1000;
+    unsigned long micros = ns / 1000 % 1000;
+    unsigned long nanos = ns % 1000;
+
+    printf("На обчислення витрачено часу: %lu секунд %lu мілісекунд %lu мікросекунд %lu наносекунд\n",
+           seconds, millis, micros, nanos);
+
+
     if(result != result)
     {
         printf("Роз'вязок, що задовільнив би умову не знайдено\n");
+        printf("Проміжний результат:\n"
+           "\tпохибка = %e\n"
+           "\tx   = %lf\n"
+           "\tf(x)= %e\n",
+           max_err,
+           a,
+           f(a));
 
         pressEnterToContinue();
         return 0;
